@@ -269,9 +269,23 @@ void chat_menu()
         char send_message[1000] = "send ";
         char channel_members[MAX] = "channel members ";
         char refresh[MAX] = "refresh ";
-        printf("1: Send message\n2: Refresh channel\n3: Channel members\n4: Leave channel\n");
+        char member[100] = "member ";
+        printf("1: Send message\n2: Refresh channel\n3: Channel members\n4: Leave channel\n5: Check member (NEW !)\n");
         scanf("%d%c", &send_refresh_member_leave, &bn);
         make_socket();
+        if(send_refresh_member_leave == 5)
+        {
+            system("cls");
+            printf("Please send requested username to check\n");
+            char membertocheck[20] ={};
+            scanf("%[^\n]s", membertocheck);
+            strcat(member, membertocheck);
+            member[strlen(member)] = ' ';
+            strcat(member, user_token);
+            send(client_socket, member, strlen(member), 0);
+            recv(client_socket, recieve, sizeof(recieve), 0);
+            printf("%s\n\n", recieve);
+        }
         if(send_refresh_member_leave == 4)
         {
             strcat(leave_channel, user_token);

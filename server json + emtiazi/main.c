@@ -19,6 +19,7 @@ void token_make();
 void send_message();
 void channel_members();
 void refresh();
+void member_check();
 int check_tekrari_username(char tocheck[]);
 int check_tekrari_channelname(char tocheck[]);
 int token_check();
@@ -39,6 +40,7 @@ char password[30];
 char channelname[30];
 char usertoken[50];
 char sefr[5];
+char ismember[30];
 
 char new_messages[300] = "{\"type\":\"List\",\"content\":[";
 char* make_json_error(char* tojson)
@@ -252,6 +254,12 @@ int main()
             sscanf(buffer + 8, "%s", usertoken);
             refresh();
         }
+        if(strncmp(command, "member", 6) == 0)
+        {
+            memset(ismember, 0, strlen(ismember));
+            sscanf(buffer + 7, "%s %s", ismember, usertoken);
+            member_check();
+        }
 
     }
 
@@ -285,6 +293,8 @@ void register_user()
     {
         char* username_notavailable = make_json_error("this username is not available.");
         send(client_socket, username_notavailable,strlen(username_notavailable), 0);
+        printf("FROM SERVER : %s\n", username_notavailable);
+        free(username_notavailable);
     }
     else
     {
@@ -528,6 +538,54 @@ void refresh()
         free(new_messages);
     }
 }
+
+
+void member_check()
+{
+    if((onlineuser_number = token_check()) == -1)
+    {
+        char* token_notvalid = make_json_error("Authentication failed!");
+        send(client_socket, token_notvalid, strlen(token_notvalid), 0);
+        printf("FROM SERVER : %s\n", token_notvalid);
+        free(token_notvalid);
+    }
+    else if(strncmp(sefr, online_list[onlineuser_number].online_channelname, 5) == 0)
+    {
+        char* member_notvalid = make_json_error("User is not a member of the channel");
+        send(client_socket, member_notvalid, strlen(member_notvalid), 0);
+        printf("FROM SERVER : %s\n", member_notvalid);
+        free(member_notvalid);
+    }
+    else
+    {
+        int flag = 0;
+        memset(channelname, 0, strlen(channelname));
+        strcpy(channelname, online_list[onlineuser_number].online_channelname);
+        for(int i = 0; i <= list_counter; i++)
+        {
+            if(strcmp(channelname, online_list[i].online_channelname) == 0)
+            {
+                if(strcmp(online_list[i].online_username, ismember) == 0)
+                {
+                    flag = 1;
+                    break;
+                }
+            }
+        }
+        if(flag == 1)
+        {
+            send(client_socket, "true", strlen("true"), 0);
+            printf("FROM SERVER : true\n");
+        }
+        else
+        {
+            send(client_socket, "false", strlen("false"), 0);
+            printf("FROM SERVER : false\n");
+        }
+    }
+}
+
+
 void listen_accept()
 {
     if ((listen(server_socket, 5)) != 0)
